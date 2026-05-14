@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>Threads OAuth Callback</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 600px; margin: 60px auto; padding: 20px; background: #f9f9f9; }
+  .box { background: white; border-radius: 12px; padding: 30px; box-shadow: 0 2px 12px rgba(0,0,0,0.1); }
+  h1 { color: #333; }
+  .code { background: #f0f0f0; border-radius: 8px; padding: 16px; word-break: break-all; font-family: monospace; font-size: 14px; margin: 16px 0; }
+  .success { color: #28a745; }
+  .error { color: #dc3545; }
+  button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 16px; margin-top: 10px; }
+  button:hover { background: #0056b3; }
+</style>
+</head>
+<body>
+<div class="box">
+  <h1 id="title">Threads 認証処理中...</h1>
+  <div id="content"></div>
+</div>
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
+  const error = params.get('error');
+
+  if (code) {
+    document.getElementById('title').innerHTML = '✅ 認証成功！';
+    document.getElementById('title').className = 'success';
+    document.getElementById('content').innerHTML = `
+      <p>認証コードを取得しました。<strong>このコードをコピーしてください：</strong></p>
+      <div class="code" id="authCode">${code}</div>
+      <button onclick="copyCode()">コードをコピー</button>
+      <p style="margin-top:20px; color:#666; font-size:14px;">
+        コードをコピーしたら、Claudeのチャットに「code=${code}」と貼り付けてください。
+      </p>
+    `;
+    // ローカルサーバーへの転送も試みる
+    fetch('http://localhost:8080/?code=' + encodeURIComponent(code)).catch(() => {});
+  } else if (error) {
+    document.getElementById('title').innerHTML = '❌ エラー';
+    document.getElementById('title').className = 'error';
+    document.getElementById('content').innerHTML = `<p>エラー: ${params.get('error_description') || error}</p>`;
+  } else {
+    document.getElementById('title').innerHTML = 'Threads OAuth コールバック';
+    document.getElementById('content').innerHTML = '<p>このページはThreads OAuthのコールバック用です。</p>';
+  }
+
+  function copyCode() {
+    const code = document.getElementById('authCode').textContent;
+    navigator.clipboard.writeText(code).then(() => {
+      alert('コードをコピーしました！');
+    });
+  }
+</script>
+</body>
+</html>
