@@ -1,6 +1,7 @@
 import json
-import anthropic
-from config import ANTHROPIC_API_KEY, POSTING_TOPIC
+import re
+from groq import Groq
+from config import GROQ_API_KEY, POSTING_TOPIC
 
 
 def analyze_pdca(posts_with_insights: list[dict], research_data: dict, topic: str) -> dict:
@@ -8,7 +9,7 @@ def analyze_pdca(posts_with_insights: list[dict], research_data: dict, topic: st
     過去投稿のインサイト + リサーチデータをもとにPDCA分析
     → 次の投稿戦略を返す
     """
-    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+    client = Groq(api_key=GROQ_API_KEY)
 
     posts_summary = ""
     for p in posts_with_insights:
@@ -43,7 +44,7 @@ def analyze_pdca(posts_with_insights: list[dict], research_data: dict, topic: st
 3. 今日の投稿で使うべきキーワード・テーマ（3つ）
 4. 次回投稿の方向性（1行）※恋愛・遠距離・お金・PT・副業暗示のどれかを軸に
 
-JSON形式のみで返してください:
+JSON形式のみで返してください（他の文字は不要）:
 {{
   "good_points": ["良かった点1", "良かった点2"],
   "improvements": ["改善点1", "改善点2"],
@@ -51,14 +52,14 @@ JSON形式のみで返してください:
   "strategy": "今日の投稿方向性（例: 遠距離の交通費×手取り22万の悩みを共感させる）"
 }}"""
 
-    message = client.messages.create(
-        model="claude-opus-4-5",
-        max_tokens=600,
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
         messages=[{"role": "user", "content": prompt}],
+        max_tokens=600,
+        temperature=0.5,
     )
 
-    text = message.content[0].text
-    import re
+    text = response.choices[0].message.content
     match = re.search(r"\{.*\}", text, re.DOTALL)
     if match:
         try:
@@ -69,6 +70,6 @@ JSON形式のみで返してください:
     return {
         "good_points": [],
         "improvements": [],
-        "keywords": [topic],
-        "strategy": f"{topic}に関する有益な情報を発信する",
+        "keywords": ["遠距離恋愛", "手取り22万", "PT"],
+        "strategy": "遠距離恋愛×手取り22万PTの悩みを共感させる",
     }

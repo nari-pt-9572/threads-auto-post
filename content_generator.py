@@ -1,8 +1,6 @@
-import json
 import os
-import re
-import anthropic
-from config import ANTHROPIC_API_KEY, POSTING_TOPIC
+from groq import Groq
+from config import GROQ_API_KEY, POSTING_TOPIC
 
 
 def load_persona() -> str:
@@ -19,7 +17,7 @@ def generate_post(strategy: dict, topic: str, time_slot: str = "morning") -> str
     PDCA戦略をもとにThreads投稿文を生成
     time_slot: "morning"(朝6時) or "evening"(夜21時)
     """
-    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+    client = Groq(api_key=GROQ_API_KEY)
 
     persona = load_persona()
     keywords = "、".join(strategy.get("keywords", []))
@@ -64,17 +62,17 @@ PDCAから得た戦略:
 
 投稿文のみ返してください（説明・タイトル・注釈不要）:"""
 
-    message = client.messages.create(
-        model="claude-opus-4-5",
-        max_tokens=400,
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
         messages=[{"role": "user", "content": prompt}],
+        max_tokens=400,
+        temperature=0.8,
     )
 
-    post_text = message.content[0].text.strip()
+    post_text = response.choices[0].message.content.strip()
 
     # 文字数チェック（170文字超えたらトリミング）
     if len(post_text) > 175:
-        # 文末で切る
         post_text = post_text[:170].rsplit("\n", 1)[0]
 
     return post_text
