@@ -19,11 +19,10 @@ def analyze_pdca(posts_with_insights: list[dict], research_data: dict, topic: st
   閲覧: {ins.get('views', 0)} / いいね: {ins.get('likes', 0)} / リプライ: {ins.get('replies', 0)} / リポスト: {ins.get('reposts', 0)}
 """
 
-    research_summary = "\n".join(
-        p.get("trending_snippets", []) + p.get("competitor_insights", [])
-        if isinstance(p, dict) else []
-        for p in [research_data]
-    )
+    trending = research_data.get("trending_snippets", []) if isinstance(research_data, dict) else []
+    competitor = research_data.get("competitor_insights", []) if isinstance(research_data, dict) else []
+    all_snippets = [s for s in (trending + competitor) if isinstance(s, str)]
+    research_summary = "\n".join(all_snippets)
 
     prompt = f"""あなたはSNSマーケティングの専門家です。
 
