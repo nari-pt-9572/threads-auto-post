@@ -78,10 +78,17 @@ def run(slot: str):
     print(f"  戦略: {strategy.get('strategy')}")
     print(f"  キーワード: {strategy.get('keywords')}")
 
-    # ④ 投稿文生成
-    print("\n投稿文生成中...")
-    post_text_content = generate_post(strategy, POSTING_TOPIC, slot)
-    print(f"\n--- 生成された投稿 ---\n{post_text_content}\n{'---'*10}\n")
+    # ④ 投稿文生成（下書きがあればそちらを優先）
+    draft_path = DATA_DIR / "draft_post.txt"
+    if draft_path.exists():
+        with open(draft_path, "r", encoding="utf-8") as f:
+            post_text_content = f.read().strip()
+        draft_path.unlink()  # 使ったら削除
+        print(f"\n--- 下書きを使用 ---\n{post_text_content}\n{'---'*10}\n")
+    else:
+        print("\n投稿文生成中...")
+        post_text_content = generate_post(strategy, POSTING_TOPIC, slot)
+        print(f"\n--- 生成された投稿 ---\n{post_text_content}\n{'---'*10}\n")
 
     # ⑤ 投稿
     print("Threadsに投稿中...")
