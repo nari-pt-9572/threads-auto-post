@@ -17,7 +17,7 @@ from config import POSTING_TOPIC, COMPETITOR_ACCOUNTS
 from threads_api import post_text, get_recent_posts, get_post_insights
 from researcher import run_research
 from insights_analyzer import analyze_pdca
-from content_generator import generate_post
+from content_generator import generate_post, decide_post_type
 
 DATA_DIR = Path("data")
 DATA_DIR.mkdir(exist_ok=True)
@@ -84,11 +84,16 @@ def run(slot: str):
         with open(draft_path, "r", encoding="utf-8") as f:
             post_text_content = f.read().strip()
         draft_path.unlink()  # 使ったら削除
+        post_type = "draft"
         print(f"\n--- 下書きを使用 ---\n{post_text_content}\n{'---'*10}\n")
     else:
-        print("\n投稿文生成中...")
-        post_text_content = generate_post(strategy, POSTING_TOPIC, slot)
-        print(f"\n--- 生成された投稿 ---\n{post_text_content}\n{'---'*10}\n")
+        existing_log = load_json(POSTS_LOG)
+        if not isinstance(existing_log, list):
+            existing_log = []
+        post_type = decide_post_type(existing_log)
+        print(f"\n投稿文生成中... [タイプ: {post_type}]")
+        post_text_content = generate_post(strategy, POSTING_TOPIC, slot, post_type)
+        print(f"\n--- 生成された投稿 ({post_type}) ---\n{post_text_content}\n{'---'*10}\n")
 
     # ⑤ 投稿
     print("Threadsに投稿中...")
@@ -103,6 +108,7 @@ def run(slot: str):
         "post_id": post_id,
         "text": post_text_content,
         "slot": slot,
+        "post_type": post_type,
         "timestamp": datetime.now().isoformat(),
         "strategy": strategy,
         "insights": {},  # 翌日取得
