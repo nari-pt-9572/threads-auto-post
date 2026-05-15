@@ -135,6 +135,6 @@ def run(slot: str):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--slot", choices=["morning", "evening"], default="morning")
+    parser.add_argument("--slot", choices=["morning", "evening", "night1", "night2", "night3", "midnight"], default="morning")
     args = parser.parse_args()
     run(args.slot)
