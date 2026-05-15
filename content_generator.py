@@ -120,7 +120,7 @@ def generate_post(strategy: dict, topic: str, time_slot: str = "morning", post_t
 {examples}
 
 ## 投稿のルール（全共通）
-- 全体で120〜170文字
+- 全体で170〜220文字（必ず170文字以上になるよう、場面・行動・感情を十分に描写する）
 - 1文1行（改行必須）
 - 1文は10〜30文字（短く、でも意味がある）
 - 一人称は「僕」
