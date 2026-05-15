@@ -102,12 +102,14 @@ def generate_post(strategy: dict, topic: str, time_slot: str = "morning", post_t
         examples = BEFORE_EXAMPLES
         type_rules = BEFORE_RULES
 
-    # 直近投稿のネタ一覧（同じ場面を避けるため）
+    # 直近投稿のネタ一覧（同じ場面・構成を避けるため）
     recent_texts = ""
     if recent_posts:
-        recent_texts = "\n\n## 直近の投稿（これらと同じ場面・ネタは絶対に使わないこと）\n"
+        recent_texts = "\n\n## 直近の投稿（以下と同じ場面・ネタ・書き出し・構成は絶対に使わないこと）\n"
         for p in recent_posts:
-            recent_texts += f"---\n{p.get('text', '')[:80]}\n"
+            text = p.get('text', '')
+            first_line = text.split('\n')[0] if text else ''
+            recent_texts += f"書き出し:「{first_line}」\n全文:{text[:100]}\n---\n"
 
     prompt = f"""以下の「良い投稿例」と全く同じ文体・構成・クオリティで投稿を1つ書いてください。
 
@@ -142,11 +144,13 @@ def generate_post(strategy: dict, topic: str, time_slot: str = "morning", post_t
 
 【設定・リアリティ】
 - 移動手段は必ず「車」。電車・バス・徒歩で会いに行く描写は絶対にNG
-- 遠距離（片道3時間・高速道路利用）の設定を守る
+- 距離は片道3時間（高速利用）。往復は最短6時間、下道なら8時間以上
+- 「往復4時間」「往復5時間」など6時間未満の往復表現は絶対にNG
+- 「往復10時間」「往復11時間」など8時間超の表現もNG
+- afterで「早く会えるようになった」はNG。距離は変わらない。afterの変化はお金・気持ちの余裕のみ
 - 交通費＝高速代＋ガソリン代。「電車賃」「バス代」はNG
 - 「今夜会いに行く」など近距離前提の表現はNG
 - 金額は社会人としてリアルな範囲で（数百円・1000円台はNG）
-- 往復は6時間以内
 
 ## このタイプの追加ルール
 {type_rules}

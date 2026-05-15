@@ -91,8 +91,8 @@ def run(slot: str):
         if not isinstance(existing_log, list):
             existing_log = []
         post_type = decide_post_type(existing_log)
-        # 直近10件のテキストをAIに渡して同じネタを避ける
-        recent_posts = existing_log[-10:]
+        # 直近20件のテキストをAIに渡して同じネタを避ける
+        recent_posts = existing_log[-20:]
         print(f"\n投稿文生成中... [タイプ: {post_type}]")
         post_text_content = generate_post(strategy, POSTING_TOPIC, slot, post_type, recent_posts)
         print(f"\n--- 生成された投稿 ({post_type}) ---\n{post_text_content}\n{'---'*10}\n")
