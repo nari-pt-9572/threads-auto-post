@@ -87,7 +87,7 @@ AFTER_RULES = """- 「何かが変わった」ことを、彼女のセリフや�
 - before時代との対比を場面で自然に入れる"""
 
 
-def generate_post(strategy: dict, topic: str, time_slot: str = "morning", post_type: str = "before") -> str:
+def generate_post(strategy: dict, topic: str, time_slot: str = "morning", post_type: str = "before", recent_posts: list = []) -> str:
     client = Groq(api_key=GROQ_API_KEY)
 
     keywords = "、".join(strategy.get("keywords", []))
@@ -99,6 +99,13 @@ def generate_post(strategy: dict, topic: str, time_slot: str = "morning", post_t
     else:
         examples = BEFORE_EXAMPLES
         type_rules = BEFORE_RULES
+
+    # 直近投稿のネタ一覧（同じ場面を避けるため）
+    recent_texts = ""
+    if recent_posts:
+        recent_texts = "\n\n## 直近の投稿（これらと同じ場面・ネタは絶対に使わないこと）\n"
+        for p in recent_posts:
+            recent_texts += f"---\n{p.get('text', '')[:80]}\n"
 
     prompt = f"""以下の「良い投稿例」と全く同じ文体・構成・クオリティで投稿を1つ書いてください。
 
@@ -127,7 +134,7 @@ def generate_post(strategy: dict, topic: str, time_slot: str = "morning", post_t
 ## 今回のテーマ
 {direction}
 参考キーワード: {keywords}
-
+{recent_texts}
 投稿文だけ返してください（他は何も書かないこと）:"""
 
     response = client.chat.completions.create(
@@ -143,18 +150,16 @@ def generate_post(strategy: dict, topic: str, time_slot: str = "morning", post_t
 def decide_post_type(posts_log: list) -> str:
     """
     直近の投稿履歴を見てbefore/afterを決める。
-    afterが連続しないよう、after比率は約30%。
-    直近3件がすべてbeforeならafterを返す（偏りすぎ防止）。
+    - after連続OK
+    - before/afterどちらでも新しいネタを優先
+    - after比率は約40%
+    - beforeが5連続したら強制的にafter
     """
-    recent_types = [p.get("post_type", "before") for p in posts_log[-3:]]
+    recent_types = [p.get("post_type", "before") for p in posts_log[-5:]]
 
-    # 直近3件全部beforeならafterを返す
-    if recent_types and all(t == "before" for t in recent_types):
+    # beforeが5連続したらafterを強制
+    if len(recent_types) >= 5 and all(t == "before" for t in recent_types):
         return "after"
 
-    # 直近がafterなら次はbefore
-    if recent_types and recent_types[-1] == "after":
-        return "before"
-
-    # 通常は70% before / 30% after
-    return "after" if random.random() < 0.30 else "before"
+    # 通常は60% before / 40% after
+    return "after" if random.random() < 0.40 else "before"
