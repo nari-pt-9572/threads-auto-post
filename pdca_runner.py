@@ -80,7 +80,12 @@ def run(slot: str):
     print(f"  キーワード: {strategy.get('keywords')}")
 
     # ④ 投稿文生成（下書きがあればそちらを優先）
+    # draft_post.txt → draft_post2.txt の順で確認
     draft_path = DATA_DIR / "draft_post.txt"
+    if not draft_path.exists():
+        alt = DATA_DIR / "draft_post2.txt"
+        if alt.exists():
+            alt.rename(draft_path)
     if draft_path.exists():
         with open(draft_path, "r", encoding="utf-8") as f:
             content = f.read().strip()
