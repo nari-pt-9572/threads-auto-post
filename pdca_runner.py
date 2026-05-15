@@ -83,10 +83,17 @@ def run(slot: str):
     draft_path = DATA_DIR / "draft_post.txt"
     if draft_path.exists():
         with open(draft_path, "r", encoding="utf-8") as f:
-            post_text_content = f.read().strip()
+            content = f.read().strip()
         draft_path.unlink()  # 使ったら削除
-        post_type = "draft"
-        print(f"\n--- 下書きを使用 ---\n{post_text_content}\n{'---'*10}\n")
+        # 1行目が "TYPE:after" or "TYPE:before" なら種別を読み取る
+        lines = content.splitlines()
+        if lines[0].startswith("TYPE:"):
+            post_type = lines[0].replace("TYPE:", "").strip()
+            post_text_content = "\n".join(lines[1:]).strip()
+        else:
+            post_type = "before"
+            post_text_content = content
+        print(f"\n--- 下書きを使用 [{post_type}] ---\n{post_text_content}\n{'---'*10}\n")
     else:
         existing_log = load_json(POSTS_LOG)
         if not isinstance(existing_log, list):
