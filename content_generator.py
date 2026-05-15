@@ -111,7 +111,9 @@ def generate_post(strategy: dict, topic: str, time_slot: str = "morning", post_t
 {examples}
 
 ## 投稿のルール（全共通）
-- 全体で170〜220文字（必ず170文字以上になるよう、場面・行動・感情を十分に描写する）
+- 全体で170〜220文字【厳守】。170文字未満は失敗とみなす
+- 最低8行以上書く（行数が足りない場合は場面・感情・行動の描写を追加する）
+- 短すぎる場合は「その時の状況」「体の反応」「頭の中で考えていたこと」を1〜2行追加して補う
 - 1文1行（改行必須）
 - 1文は10〜30文字（短く、でも意味がある）
 - 一人称は「僕」
@@ -166,7 +168,7 @@ def generate_post(strategy: dict, topic: str, time_slot: str = "morning", post_t
     response = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
         messages=[{"role": "user", "content": prompt}],
-        max_tokens=400,
+        max_tokens=600,
         temperature=0.88,
     )
 
