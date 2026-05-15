@@ -10,11 +10,12 @@ import argparse
 import json
 import os
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 
 from config import POSTING_TOPIC, COMPETITOR_ACCOUNTS
-from threads_api import post_text, get_recent_posts, get_post_insights
+from threads_api import post_text, post_reply, get_recent_posts, get_post_insights
 from researcher import run_research
 from insights_analyzer import analyze_pdca
 from content_generator import generate_post, decide_post_type
@@ -97,10 +98,23 @@ def run(slot: str):
         post_text_content = generate_post(strategy, POSTING_TOPIC, slot, post_type, recent_posts)
         print(f"\n--- 生成された投稿 ({post_type}) ---\n{post_text_content}\n{'---'*10}\n")
 
-    # ⑤ 投稿
+    # ⑤ 投稿（タイトル → 本文の2段構成）
     print("Threadsに投稿中...")
-    post_id = post_text(post_text_content)
-    print(f"✅ 投稿完了！ post_id={post_id}")
+
+    # タイトルを決定
+    if post_type == "after":
+        title = "手取り30万になった僕が彼女に言われた一言。"
+    else:
+        title = "手取り22万だった僕が彼女に言われた一言。"
+
+    # タイトル投稿
+    title_post_id = post_text(title)
+    print(f"✅ タイトル投稿完了！ post_id={title_post_id}")
+
+    # 本文を返信として投稿
+    time.sleep(3)
+    post_id = post_reply(post_text_content, title_post_id)
+    print(f"✅ 本文投稿完了！ post_id={post_id}")
 
     # ⑥ ログ保存
     log = load_json(POSTS_LOG)

@@ -46,6 +46,31 @@ def post_text(text: str) -> str:
     return post_id
 
 
+def create_reply_container(text: str, reply_to_id: str) -> str:
+    """返信用コンテナを作成"""
+    r = requests.post(
+        f"{BASE_URL}/{THREADS_USER_ID}/threads",
+        params={
+            "media_type": "TEXT",
+            "text": text,
+            "reply_to_id": reply_to_id,
+            "access_token": THREADS_ACCESS_TOKEN,
+        },
+        timeout=30,
+    )
+    data = r.json()
+    if "error" in data:
+        raise RuntimeError(f"返信コンテナ作成エラー: {data['error']['message']}")
+    return data["id"]
+
+
+def post_reply(text: str, reply_to_id: str) -> str:
+    """既存投稿への返信を投稿"""
+    container_id = create_reply_container(text, reply_to_id)
+    post_id = publish_container(container_id)
+    return post_id
+
+
 def get_post_insights(post_id: str) -> dict:
     """投稿のインサイト（いいね・閲覧・リプライ等）を取得"""
     r = requests.get(
