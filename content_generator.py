@@ -95,13 +95,25 @@ def generate_post(strategy: dict, topic: str, time_slot: str = "morning", post_t
         if hooks:
             recent_hooks = "\n\n【以下と同じ書き出し・同じ場面は使わないこと】\n" + "\n".join(f"・{h}" for h in hooks)
 
-    # 年1回イベント（誕生日・記念日・クリスマス）の使用頻度を制限
-    annual_event_keywords = ["誕生日", "記念日", "クリスマス", "バレンタイン", "プロポーズ"]
-    recent_texts = " ".join([p.get("text", "") for p in recent_posts[-20:]])
-    used_annual_events = [kw for kw in annual_event_keywords if kw in recent_texts]
+    # 使用頻度が制限されるイベント（現実の発生頻度で管理）
+    rare_events = {
+        "年1回": ["誕生日", "記念日", "クリスマス", "バレンタイン", "昇給"],
+        "月1回": ["給料日", "給与明細"],
+        "一生に数回": ["プロポーズ", "引っ越し", "結婚式"],
+    }
+    recent_texts_20 = " ".join([p.get("text", "") for p in recent_posts[-20:]])
+    recent_texts_100 = " ".join([p.get("text", "") for p in recent_posts[-100:]])
+
+    overused = []
+    for freq, keywords in rare_events.items():
+        target = recent_texts_100 if freq == "一生に数回" else recent_texts_20
+        for kw in keywords:
+            if kw in target:
+                overused.append(f"{kw}（{freq}のイベントのため使用済み）")
+
     annual_event_warning = ""
-    if used_annual_events:
-        annual_event_warning = f"\n\n【直近20件で使用済みのため今回は使わないこと】\n" + "、".join(used_annual_events)
+    if overused:
+        annual_event_warning = "\n\n【現実の頻度を考慮して今回は使わないこと】\n" + "\n".join(f"・{e}" for e in overused)
 
     prompt = f"""以下の例文と全く同じ文体・トーン・構成で、新しい投稿を1つ書いてください。
 
@@ -118,6 +130,7 @@ def generate_post(strategy: dict, topic: str, time_slot: str = "morning", post_t
 ・彼女の一言は「僕の行動・状況・表情への自然な反応」にする。彼女が僕に何かをしてあげようとする内容はNG
 ・セリフは全体で最大2つまで。会話のやりとり（AがBに言って、BがAに返す）はNG
 ・話の流れに矛盾がないこと。登場する場面・状況が最初から最後まで一貫している
+・現実の頻度で起きないことは使わない（誕生日は年1回、引っ越しは社会人になってからほぼしない、プロポーズは一生に1回など）
 ・同じ表現を繰り返さない
 {type_rules}
 {recent_hooks}
