@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
 
 THREADS_ACCESS_TOKEN = os.getenv("THREADS_ACCESS_TOKEN")
 THREADS_USER_ID = os.getenv("THREADS_USER_ID")
