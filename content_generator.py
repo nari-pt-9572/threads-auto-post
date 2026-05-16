@@ -244,14 +244,14 @@ I. 自分に合ったやり方で続けられた話（月収100万ではなく�
 ・読者の不安・疑いを先に代弁し、自分の体験で静かに裏切る構成にする
 ・「月収100万」「起業」などの大げさな勧誘と距離を置き、等身大で語る
 ・最後の一行は抽象的な気づきで締める
-・100〜140文字
+・100〜200文字
 ・絵文字・ハッシュタグなし
 
 投稿文だけ返してください（説明不要）:"""
 
     message = client.messages.create(
         model="claude-sonnet-4-5",
-        max_tokens=250,
+        max_tokens=350,
         messages=[{"role": "user", "content": prompt}],
     )
     return message.content[0].text.strip()
