@@ -200,10 +200,47 @@ def decide_post_type(posts_log: list) -> str:
     """
     before/afterの比率を60:40で制御。
     beforeが5連続したら強制的にafter。
+    10投稿に1回はreportを返す。
     """
+    # 10投稿に1回、近況報告を挟む
+    if len(posts_log) > 0 and len(posts_log) % 10 == 0:
+        return "report"
+
     recent_types = [p.get("post_type", "before") for p in posts_log[-5:]]
 
     if len(recent_types) >= 5 and all(t == "before" for t in recent_types):
         return "after"
 
     return "after" if random.random() < 0.40 else "before"
+
+
+def generate_report_post() -> str:
+    """10投稿に1回挟む近況報告投稿を生成"""
+    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+
+    prompt = """25歳理学療法士が副業を始めてからの近況を、以下の例文スタイルで書いてください。
+
+【例文】
+副業始めて1年が経った。
+手取りは変わってない。
+でも毎月8万、別で入るようになった。
+彼女に「最近変わったね」って言われる回数が増えた。
+何が変わったか、うまく説明できない。
+お金じゃない何かが、変わったんだと思う。
+
+【ルール】
+・1文1行、一人称は「僕」、丁寧語NG
+・副業の内容・手法は言わない
+・100〜130文字
+・絵文字・ハッシュタグなし
+・毎回少し違う切り口で書く（収入・彼女の反応・自分の変化・将来への気持ちなど）
+・最後の一行は抽象的な気づきで締める
+
+投稿文だけ返してください（説明不要）:"""
+
+    message = client.messages.create(
+        model="claude-sonnet-4-5",
+        max_tokens=200,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    return message.content[0].text.strip()

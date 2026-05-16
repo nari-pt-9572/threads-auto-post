@@ -104,10 +104,13 @@ def run(slot: str):
         if not isinstance(existing_log, list):
             existing_log = []
         post_type = decide_post_type(existing_log)
-        # 直近20件のテキストをAIに渡して同じネタを避ける
         recent_posts = existing_log[-20:]
         print(f"\n投稿文生成中... [タイプ: {post_type}]")
-        post_text_content = generate_post(strategy, POSTING_TOPIC, slot, post_type, recent_posts)
+        if post_type == "report":
+            from content_generator import generate_report_post
+            post_text_content = generate_report_post()
+        else:
+            post_text_content = generate_post(strategy, POSTING_TOPIC, slot, post_type, recent_posts)
         print(f"\n--- 生成された投稿 ({post_type}) ---\n{post_text_content}\n{'---'*10}\n")
 
     # ⑤ 投稿（タイトル → 本文の2段構成）
@@ -117,8 +120,21 @@ def run(slot: str):
     import anthropic as _anthropic
     from config import ANTHROPIC_API_KEY as _API_KEY
     _client = _anthropic.Anthropic(api_key=_API_KEY)
-    _time_label = "手取り22万だった頃" if post_type == "before" else "手取り30万になった今"
-    _title_prompt = f"""以下のThreads投稿の内容を読んで、タイトルを1つ生成してください。
+
+    if post_type == "report":
+        _title_prompt = f"""以下の近況報告投稿に合うタイトルを1つ生成してください。
+
+【投稿本文】
+{post_text_content}
+
+【タイトルのルール】
+・本文の内容を一言で表す、気になるタイトル
+・例：「最近の報告。」「少し変わった話。」「気づいたこと。」「副業1年後の話。」
+・毎回違うバリエーションにする
+・15文字以内。句読点で終わる。タイトルのみ返す（説明不要）"""
+    else:
+        _time_label = "手取り22万だった頃" if post_type == "before" else "手取り30万になった今"
+        _title_prompt = f"""以下のThreads投稿の内容を読んで、タイトルを1つ生成してください。
 
 【投稿本文】
 {post_text_content}
@@ -129,6 +145,7 @@ def run(slot: str):
 ・例2（逆説）：「『会いに行く』が、二人を壊しかけてた。」
 ・例3（逆説）：「好きだから我慢する、が一番危なかった。」
 ・20文字以内。句読点で終わる。タイトルのみ返す（説明不要）"""
+
     _title_msg = _client.messages.create(
         model="claude-sonnet-4-5",
         max_tokens=50,
