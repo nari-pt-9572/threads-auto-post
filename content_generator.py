@@ -144,7 +144,7 @@ def generate_post(strategy: dict, topic: str, time_slot: str = "morning", post_t
 
 投稿文だけ返してください（説明・タイトル不要）:"""
 
-    for attempt in range(3):
+    for attempt in range(4):
         message = client.messages.create(
             model="claude-sonnet-4-5",
             max_tokens=400,
@@ -152,15 +152,45 @@ def generate_post(strategy: dict, topic: str, time_slot: str = "morning", post_t
         )
         result = message.content[0].text.strip()
         char_count = len(result.replace("\n", ""))
-        if 150 <= char_count <= 180:
-            return result
-        # 短すぎる場合はプロンプトに追記して再試行
+
+        # 文字数チェック
         if char_count < 150:
             prompt += f"\n\n※前回の生成は{char_count}文字でした。必ず150文字以上180文字以内で書いてください。"
-        else:
+            continue
+        if char_count > 180:
             prompt += f"\n\n※前回の生成は{char_count}文字でした。必ず180文字以内で書いてください。"
+            continue
 
-    return result  # 3回試してもダメなら最後の結果を返す
+        # 品質チェック（Claude自身が採点）
+        check_prompt = f"""以下のThreads投稿を読んで、品質チェックをしてください。
+
+【投稿文】
+{result}
+
+【チェック項目】
+1. 誕生日・夜勤・引っ越し・プロポーズなど禁止シーンが含まれていないか
+2. 彼女の一言が「僕の行動・状況・表情への自然な反応」になっているか（彼女が何かしてあげようとする内容はNG）
+3. 最後の一文が意味として明確に伝わるか（読んで「？」にならないか）
+4. 全体の話の流れに矛盾・唐突な展開がないか
+5. 読んだ人が「あるある」「わかる」と感じられるリアルな描写か
+
+すべてOKなら「OK」とだけ返してください。
+問題があれば「NG: （理由を1行で）」と返してください。"""
+
+        check = client.messages.create(
+            model="claude-sonnet-4-5",
+            max_tokens=100,
+            messages=[{"role": "user", "content": check_prompt}],
+        )
+        check_result = check.content[0].text.strip()
+
+        if check_result.startswith("OK"):
+            return result
+        else:
+            # NGの理由をプロンプトに追記して再生成
+            prompt += f"\n\n※前回の生成はNGでした。理由: {check_result}\n上記の問題を修正して書き直してください。"
+
+    return result  # 4回試してもダメなら最後の結果を返す
 
 
 def decide_post_type(posts_log: list) -> str:
