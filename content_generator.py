@@ -82,6 +82,7 @@ def generate_post(strategy: dict, topic: str, time_slot: str = "morning", post_t
 
     keywords = "、".join(strategy.get("keywords", []))
     direction = strategy.get("strategy", "")
+    scene = strategy.get("scene", "")
 
     examples = AFTER_EXAMPLES if post_type == "after" else BEFORE_EXAMPLES
     type_rules = AFTER_RULES if post_type == "after" else BEFORE_RULES
@@ -114,6 +115,8 @@ def generate_post(strategy: dict, topic: str, time_slot: str = "morning", post_t
 
 【今回のテーマ】
 {direction}（参考キーワード: {keywords}）
+【今回の舞台・シーン】
+{scene}
 
 投稿文だけ返してください（説明・タイトル不要）:"""
 

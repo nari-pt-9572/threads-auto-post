@@ -1,7 +1,7 @@
 import json
 import re
-from groq import Groq
-from config import GROQ_API_KEY, POSTING_TOPIC
+import anthropic
+from config import ANTHROPIC_API_KEY, POSTING_TOPIC
 
 
 def analyze_pdca(posts_with_insights: list[dict], research_data: dict, topic: str) -> dict:
@@ -9,7 +9,7 @@ def analyze_pdca(posts_with_insights: list[dict], research_data: dict, topic: st
     過去投稿のインサイト + リサーチデータをもとにPDCA分析
     → 次の投稿戦略を返す
     """
-    client = Groq(api_key=GROQ_API_KEY)
+    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
     posts_summary = ""
     for p in posts_with_insights:
@@ -20,9 +20,11 @@ def analyze_pdca(posts_with_insights: list[dict], research_data: dict, topic: st
 """
 
     trending = research_data.get("trending_snippets", []) if isinstance(research_data, dict) else []
+    scenes = research_data.get("scene_ideas", []) if isinstance(research_data, dict) else []
     competitor = research_data.get("competitor_insights", []) if isinstance(research_data, dict) else []
     all_snippets = [s for s in (trending + competitor) if isinstance(s, str)]
     research_summary = "\n".join(all_snippets)
+    scene_summary = "\n".join([s for s in scenes if isinstance(s, str)])
 
     prompt = f"""あなたはSNSマーケティングの専門家です。
 
@@ -34,31 +36,35 @@ def analyze_pdca(posts_with_insights: list[dict], research_data: dict, topic: st
 ## 直近の投稿パフォーマンス
 {posts_summary if posts_summary else "データなし（初回実行）"}
 
-## 市場リサーチ
+## 市場リサーチ（トレンド・競合）
 {research_summary if research_summary else "データなし"}
+
+## バズりやすいシーン・ネタ候補
+{scene_summary if scene_summary else "データなし"}
 
 ## 依頼
 1. パフォーマンスの良かった投稿の特徴（なければスキップ）
-2. 改善すべき点（心理的ブレーキを外せているか、自分事化できているか）
+2. 改善すべき点
 3. 今日の投稿で使うべきキーワード・テーマ（3つ）
-4. 次回投稿の方向性（1行）※恋愛・遠距離・お金・PT・副業暗示のどれかを軸に
+4. 次回投稿の具体的なシーン（高速・給料・ガソリン以外で。例：夜勤明けの彼女との電話、誕生日プレゼントを選ぶ場面、職場の休憩室、コンビニ、記念日など）
+5. 次回投稿の方向性（1行）
 
 JSON形式のみで返してください（他の文字は不要）:
 {{
   "good_points": ["良かった点1", "良かった点2"],
   "improvements": ["改善点1", "改善点2"],
   "keywords": ["キーワード1", "キーワード2", "キーワード3"],
-  "strategy": "今日の投稿方向性（例: 遠距離の交通費×手取り22万の悩みを共感させる）"
+  "scene": "具体的なシーン（例: 夜勤明けの彼女に電話した夜、職場の休憩室で給与明細を見た瞬間）",
+  "strategy": "今日の投稿方向性（例: 夜勤明けの彼女×手取り22万の不安を共感させる）"
 }}"""
 
-    response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[{"role": "user", "content": prompt}],
+    message = client.messages.create(
+        model="claude-sonnet-4-5",
         max_tokens=600,
-        temperature=0.5,
+        messages=[{"role": "user", "content": prompt}],
     )
 
-    text = response.choices[0].message.content
+    text = message.content[0].text
     match = re.search(r"\{.*\}", text, re.DOTALL)
     if match:
         try:
@@ -70,5 +76,6 @@ JSON形式のみで返してください（他の文字は不要）:
         "good_points": [],
         "improvements": [],
         "keywords": ["遠距離恋愛", "手取り22万", "PT"],
+        "scene": "職場の休憩室で給与明細を見た瞬間",
         "strategy": "遠距離恋愛×手取り22万PTの悩みを共感させる",
     }
