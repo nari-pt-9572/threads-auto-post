@@ -95,21 +95,20 @@ def generate_post(strategy: dict, topic: str, time_slot: str = "morning", post_t
         if hooks:
             recent_hooks = "\n\n【以下と同じ書き出し・同じ場面は使わないこと】\n" + "\n".join(f"・{h}" for h in hooks)
 
-    # 使用頻度が制限されるイベント（現実の発生頻度で管理）
+    # 使用頻度が制限されるイベント（チェック範囲 = 直近N件）
     rare_events = {
-        "年1回": ["誕生日", "記念日", "クリスマス", "バレンタイン", "昇給"],
-        "月1回": ["給料日", "給与明細"],
-        "一生に数回": ["プロポーズ", "引っ越し", "結婚式"],
+        ("年1回", 60):      ["誕生日", "記念日", "クリスマス", "バレンタイン", "昇給"],
+        ("月1〜2回", 40):   ["給料日", "給与明細"],
+        ("一生に数回", 200): ["プロポーズ", "引っ越し", "結婚式"],
     }
-    recent_texts_20 = " ".join([p.get("text", "") for p in recent_posts[-20:]])
-    recent_texts_100 = " ".join([p.get("text", "") for p in recent_posts[-100:]])
+    recent_texts_cache = {}
 
     overused = []
-    for freq, keywords in rare_events.items():
-        target = recent_texts_100 if freq == "一生に数回" else recent_texts_20
+    for (freq, window), keywords in rare_events.items():
+        target = " ".join([p.get("text", "") for p in recent_posts[-window:]])
         for kw in keywords:
             if kw in target:
-                overused.append(f"{kw}（{freq}のイベントのため使用済み）")
+                overused.append(f"{kw}（{freq}のネタのため使用済み）")
 
     annual_event_warning = ""
     if overused:
