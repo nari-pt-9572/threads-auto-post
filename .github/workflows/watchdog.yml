@@ -1,0 +1,108 @@
+name: ウォッチドッグ（投稿漏れ自動リトライ）
+
+on:
+  schedule:
+    # 各投稿時刻の30分後にチェック (UTC)
+    - cron: '30 21 * * *'  # 6:30 JST  (朝投稿の30分後)
+    - cron: '30 9 * * *'   # 18:30 JST (夕方投稿の30分後)
+    - cron: '30 11 * * *'  # 20:30 JST (夜1投稿の30分後)
+    - cron: '30 13 * * *'  # 22:30 JST (夜2投稿の30分後)
+    - cron: '30 14 * * *'  # 23:30 JST (夜3投稿の30分後)
+    - cron: '30 15 * * *'  # 0:30 JST  (深夜投稿の30分後)
+  workflow_dispatch:
+
+jobs:
+  check_and_retry:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: リポジトリをチェックアウト
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Python セットアップ
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 依存関係インストール
+        run: pip install -r requirements.txt
+
+      - name: 投稿漏れチェック＆リトライ
+        env:
+          THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
+          THREADS_USER_ID: ${{ secrets.THREADS_USER_ID }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          SERPER_API_KEY: ${{ secrets.SERPER_API_KEY }}
+          POSTING_TOPIC: ${{ secrets.POSTING_TOPIC }}
+          COMPETITOR_ACCOUNTS: ${{ secrets.COMPETITOR_ACCOUNTS }}
+        run: |
+          python - <<'EOF'
+          import json
+          import subprocess
+          import sys
+          from datetime import datetime, timezone, timedelta
+          from pathlib import Path
+
+          JST = timezone(timedelta(hours=9))
+          now = datetime.now(JST)
+          now_hour = now.hour  # JST時間
+
+          # この実行が対象とするスロットを特定
+          slot_map = {
+              6:  "morning",
+              18: "evening",
+              20: "night1",
+              22: "night2",
+              23: "night3",
+              0:  "midnight",
+          }
+          # 30分後に実行されるので、現在時刻-1時間がターゲットスロット
+          target_hour = (now_hour - 1) % 24
+          target_slot = slot_map.get(target_hour)
+
+          if not target_slot:
+              print(f"[watchdog] {target_hour}時はスケジュール対象外。スキップ。")
+              sys.exit(0)
+
+          print(f"[watchdog] チェック対象: {target_hour}時 → slot={target_slot}")
+
+          # posts_log.jsonを確認
+          log_path = Path("data/posts_log.json")
+          if not log_path.exists():
+              posts = []
+          else:
+              with open(log_path, "r", encoding="utf-8") as f:
+                  posts = json.load(f)
+
+          # 過去2時間以内に投稿があるか確認
+          two_hours_ago = now - timedelta(hours=2)
+          recent = [
+              p for p in posts
+              if datetime.fromisoformat(p["timestamp"]).astimezone(JST) > two_hours_ago
+          ]
+
+          if recent:
+              print(f"[watchdog] 過去2時間以内に投稿あり（{len(recent)}件）。リトライ不要。")
+              sys.exit(0)
+
+          print(f"[watchdog] 投稿漏れ検出！ slot={target_slot} でリトライします。")
+          result = subprocess.run(
+              ["python", "pdca_runner.py", "--slot", target_slot],
+              capture_output=False
+          )
+          sys.exit(result.returncode)
+          EOF
+
+      - name: データをコミット・プッシュ
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull --rebase
+          git add data/
+          git diff --staged --quiet || git commit -m "🔁 ウォッチドッグ リトライ投稿 $(date '+%Y-%m-%d %H:%M')"
+          git push
