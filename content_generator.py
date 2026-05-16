@@ -88,12 +88,20 @@ def generate_post(strategy: dict, topic: str, time_slot: str = "morning", post_t
     examples = AFTER_EXAMPLES if post_type == "after" else BEFORE_EXAMPLES
     type_rules = AFTER_RULES if post_type == "after" else BEFORE_RULES
 
-    # 直近投稿の書き出し一覧（重複防止）
+    # 直近投稿の書き出し＋テーマ一覧（重複防止）
     recent_hooks = ""
     if recent_posts:
         hooks = [p.get("text", "").split("\n")[0] for p in recent_posts[-10:] if p.get("text")]
         if hooks:
             recent_hooks = "\n\n【以下と同じ書き出し・同じ場面は使わないこと】\n" + "\n".join(f"・{h}" for h in hooks)
+
+    # 年1回イベント（誕生日・記念日・クリスマス）の使用頻度を制限
+    annual_event_keywords = ["誕生日", "記念日", "クリスマス", "バレンタイン", "プロポーズ"]
+    recent_texts = " ".join([p.get("text", "") for p in recent_posts[-20:]])
+    used_annual_events = [kw for kw in annual_event_keywords if kw in recent_texts]
+    annual_event_warning = ""
+    if used_annual_events:
+        annual_event_warning = f"\n\n【直近20件で使用済みのため今回は使わないこと】\n" + "、".join(used_annual_events)
 
     prompt = f"""以下の例文と全く同じ文体・トーン・構成で、新しい投稿を1つ書いてください。
 
@@ -113,6 +121,7 @@ def generate_post(strategy: dict, topic: str, time_slot: str = "morning", post_t
 ・同じ表現を繰り返さない
 {type_rules}
 {recent_hooks}
+{annual_event_warning}
 
 【今回のテーマ】
 {direction}（参考キーワード: {keywords}）
