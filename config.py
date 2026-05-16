@@ -5,8 +5,8 @@ load_dotenv()
 
 THREADS_ACCESS_TOKEN = os.getenv("THREADS_ACCESS_TOKEN")
 THREADS_USER_ID = os.getenv("THREADS_USER_ID")
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")  # 不使用（Groqに移行）
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 SERPER_API_KEY = os.getenv("SERPER_API_KEY")
 
 # 投稿ジャンル・テーマ（後で設定）

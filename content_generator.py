@@ -1,7 +1,7 @@
 import os
 import random
-from groq import Groq
-from config import GROQ_API_KEY, POSTING_TOPIC
+import anthropic
+from config import ANTHROPIC_API_KEY, POSTING_TOPIC
 
 
 def load_persona() -> str:
@@ -78,7 +78,7 @@ AFTER_RULES = """・最初から最後まで「今・手取り30万で余裕が�
 
 
 def generate_post(strategy: dict, topic: str, time_slot: str = "morning", post_type: str = "before", recent_posts: list = []) -> str:
-    client = Groq(api_key=GROQ_API_KEY)
+    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
     keywords = "、".join(strategy.get("keywords", []))
     direction = strategy.get("strategy", "")
@@ -114,14 +114,13 @@ def generate_post(strategy: dict, topic: str, time_slot: str = "morning", post_t
 
 投稿文だけ返してください（説明・タイトル不要）:"""
 
-    response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[{"role": "user", "content": prompt}],
+    message = client.messages.create(
+        model="claude-sonnet-4-5",
         max_tokens=400,
-        temperature=0.7,
+        messages=[{"role": "user", "content": prompt}],
     )
 
-    return response.choices[0].message.content.strip()
+    return message.content[0].text.strip()
 
 
 def decide_post_type(posts_log: list) -> str:
