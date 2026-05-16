@@ -145,25 +145,30 @@ def generate_post(strategy: dict, topic: str, time_slot: str = "morning", post_t
 
 投稿文だけ返してください（説明・タイトル不要）:"""
 
-    for attempt in range(4):
+    current_prompt = prompt
+    last_result = ""
+
+    for attempt in range(5):
         message = client.messages.create(
             model="claude-sonnet-4-5",
             max_tokens=400,
-            messages=[{"role": "user", "content": prompt}],
+            messages=[{"role": "user", "content": current_prompt}],
         )
         result = message.content[0].text.strip()
+        last_result = result
         char_count = len(result.replace("\n", ""))
+
+        issues = []
 
         # 文字数チェック
         if char_count < 150:
-            prompt += f"\n\n※前回の生成は{char_count}文字でした。必ず150文字以上180文字以内で書いてください。"
-            continue
-        if char_count > 180:
-            prompt += f"\n\n※前回の生成は{char_count}文字でした。必ず180文字以内で書いてください。"
-            continue
+            issues.append(f"文字数が{char_count}文字で少なすぎます。必ず150〜180文字で書いてください。")
+        elif char_count > 180:
+            issues.append(f"文字数が{char_count}文字で多すぎます。必ず150〜180文字で書いてください。")
 
-        # 品質チェック（Claude自身が採点）
-        check_prompt = f"""以下のThreads投稿を読んで、品質チェックをしてください。
+        # 文字数OKなら品質チェック
+        if not issues:
+            check_prompt = f"""以下のThreads投稿を読んで、品質チェックをしてください。
 
 【投稿文】
 {result}
@@ -178,20 +183,23 @@ def generate_post(strategy: dict, topic: str, time_slot: str = "morning", post_t
 すべてOKなら「OK」とだけ返してください。
 問題があれば「NG: （理由を1行で）」と返してください。"""
 
-        check = client.messages.create(
-            model="claude-sonnet-4-5",
-            max_tokens=100,
-            messages=[{"role": "user", "content": check_prompt}],
-        )
-        check_result = check.content[0].text.strip()
+            check = client.messages.create(
+                model="claude-sonnet-4-5",
+                max_tokens=100,
+                messages=[{"role": "user", "content": check_prompt}],
+            )
+            check_result = check.content[0].text.strip()
 
-        if check_result.startswith("OK"):
-            return result
-        else:
-            # NGの理由をプロンプトに追記して再生成
-            prompt += f"\n\n※前回の生成はNGでした。理由: {check_result}\n上記の問題を修正して書き直してください。"
+            if check_result.startswith("OK"):
+                return result
+            else:
+                issues.append(check_result)
 
-    return result  # 4回試してもダメなら最後の結果を返す
+        # 問題点をまとめてフィードバック
+        feedback = "\n".join(f"・{i}" for i in issues)
+        current_prompt = prompt + f"\n\n※前回の生成に問題がありました。修正して書き直してください:\n{feedback}"
+
+    return last_result  # 5回試してもダメなら最後の結果を返す
 
 
 def decide_post_type(posts_log: list) -> str:
