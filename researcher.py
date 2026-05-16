@@ -1,6 +1,7 @@
 import requests
-import json
-from config import SERPER_API_KEY, POSTING_TOPIC
+import random
+import anthropic
+from config import SERPER_API_KEY, ANTHROPIC_API_KEY
 
 
 def search_google(query: str, num: int = 5) -> list[dict]:
@@ -17,48 +18,66 @@ def search_google(query: str, num: int = 5) -> list[dict]:
     return results.get("organic", [])
 
 
-def get_trending_topics(topic: str) -> list[str]:
-    """ジャンル内のトレンドキーワードを取得"""
-    queries = [
-        # 遠距離恋愛ネタ
-        "遠距離恋愛 あるある SNS バズ",
-        "遠距離恋愛 お金 しんどい 共感",
-        # 看護師彼女ネタ
-        "看護師 彼女 あるある Threads",
-        "看護師 彼氏 夜勤 遠距離",
-        # 理学療法士ネタ
-        "理学療法士 給料 リアル あるある",
-        "PT 手取り 低い 本音",
-        # 恋愛×お金ネタ
-        "彼女に言われた一言 お金 共感 バズ",
-        "手取り 低い 彼女 遠距離 Threads",
+def generate_search_queries() -> list[str]:
+    """
+    Claude Sonnetが毎回異なる検索クエリを自動生成。
+    恋愛全般（遠距離・同棲・結婚・将来・デート・記念日など）を幅広くカバー。
+    """
+    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+
+    prompt = """以下のアカウントコンセプトに合った、SNS投稿ネタのリサーチ用検索クエリを8つ生成してください。
+
+アカウントコンセプト:
+- 25歳理学療法士（手取り22万）× 彼女は看護師 × お金の不安 × 副業で人生が変わった
+- ターゲット: 22〜29歳の恋愛中・同棲中・結婚を考えている男女
+
+検索クエリの条件:
+- 恋愛全般を幅広くカバーする（遠距離・同棲・結婚・将来の話・デート・記念日・喧嘩・プロポーズ・価値観の違い・お金の話など）
+- 毎回違うジャンルを選ぶ（高速・給料・ガソリンに偏らない）
+- SNSでバズりやすい共感系ネタを狙う
+- 「あるある」「エピソード」「本音」「共感」などをキーワードに含める
+
+8つのクエリをJSON配列で返してください（説明不要）:
+["クエリ1", "クエリ2", ...]"""
+
+    message = client.messages.create(
+        model="claude-sonnet-4-5",
+        max_tokens=300,
+        messages=[{"role": "user", "content": prompt}],
+    )
+
+    text = message.content[0].text.strip()
+    import re, json
+    match = re.search(r'\[.*\]', text, re.DOTALL)
+    if match:
+        try:
+            queries = json.loads(match.group())
+            return queries[:8]
+        except Exception:
+            pass
+
+    # フォールバック（生成失敗時）
+    return [
+        "同棲 彼女 お金 本音 SNS",
+        "結婚 彼女 将来 不安 あるある",
+        "看護師 彼女 夜勤 彼氏 エピソード",
+        "理学療法士 手取り 低い リアル",
+        "彼女 記念日 プレゼント お金ない",
+        "同棲 生活費 分担 揉める あるある",
+        "プロポーズ お金 タイミング 本音",
+        "遠距離恋愛 終わり 同棲 決断 エピソード",
     ]
+
+
+def get_trending_snippets(queries: list[str]) -> list[str]:
+    """検索クエリで検索してスニペットを収集"""
     snippets = []
     for q in queries:
         results = search_google(q, num=3)
         for r in results:
             if r.get("snippet"):
                 snippets.append(r["snippet"])
-    return snippets[:12]
-
-
-def get_scene_ideas() -> list[str]:
-    """バズりやすいシーン・ネタを検索して取得"""
-    queries = [
-        "遠距離恋愛 彼女 会いに行く エピソード",
-        "看護師 彼女 夜勤明け 彼氏 エピソード",
-        "理学療法士 職場 あるある エピソード",
-        "手取り低い 彼女 記念日 プレゼント エピソード",
-        "社会人 遠距離 お金ない リアル",
-        "彼女に言われた 忘れられない 一言",
-    ]
-    scenes = []
-    for q in queries:
-        results = search_google(q, num=3)
-        for r in results:
-            if r.get("snippet"):
-                scenes.append(r["snippet"])
-    return scenes[:10]
+    return snippets[:16]
 
 
 def research_competitors(accounts: list[str]) -> list[str]:
@@ -76,17 +95,18 @@ def research_competitors(accounts: list[str]) -> list[str]:
 
 def run_research(topic: str, competitor_accounts: list[str]) -> dict:
     """総合リサーチ実行"""
-    print("トレンドリサーチ中...")
-    trending = get_trending_topics(topic)
+    print("検索クエリ自動生成中...")
+    queries = generate_search_queries()
+    print(f"  生成されたクエリ: {queries[:3]}...")
 
-    print("シーンネタリサーチ中...")
-    scenes = get_scene_ideas()
+    print("トレンドリサーチ中...")
+    trending = get_trending_snippets(queries)
 
     print("競合リサーチ中...")
     competitors = research_competitors(competitor_accounts)
 
     return {
+        "search_queries": queries,
         "trending_snippets": trending,
-        "scene_ideas": scenes,
         "competitor_insights": competitors,
     }

@@ -20,11 +20,11 @@ def analyze_pdca(posts_with_insights: list[dict], research_data: dict, topic: st
 """
 
     trending = research_data.get("trending_snippets", []) if isinstance(research_data, dict) else []
-    scenes = research_data.get("scene_ideas", []) if isinstance(research_data, dict) else []
     competitor = research_data.get("competitor_insights", []) if isinstance(research_data, dict) else []
+    queries = research_data.get("search_queries", []) if isinstance(research_data, dict) else []
     all_snippets = [s for s in (trending + competitor) if isinstance(s, str)]
     research_summary = "\n".join(all_snippets)
-    scene_summary = "\n".join([s for s in scenes if isinstance(s, str)])
+    queries_summary = "、".join(queries[:8])
 
     prompt = f"""あなたはSNSマーケティングの専門家です。
 
@@ -36,11 +36,11 @@ def analyze_pdca(posts_with_insights: list[dict], research_data: dict, topic: st
 ## 直近の投稿パフォーマンス
 {posts_summary if posts_summary else "データなし（初回実行）"}
 
+## 今回リサーチしたジャンル
+{queries_summary if queries_summary else "データなし"}
+
 ## 市場リサーチ（トレンド・競合）
 {research_summary if research_summary else "データなし"}
-
-## バズりやすいシーン・ネタ候補
-{scene_summary if scene_summary else "データなし"}
 
 ## 依頼
 1. パフォーマンスの良かった投稿の特徴（なければスキップ）
