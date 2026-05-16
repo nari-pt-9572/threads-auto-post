@@ -198,18 +198,18 @@ def generate_post(strategy: dict, topic: str, time_slot: str = "morning", post_t
 
 def decide_post_type(posts_log: list) -> str:
     """
-    before/afterの比率を60:40で制御。
+    before/afterの比率を50:50で制御。
     beforeが5連続したら強制的にafter。
-    10投稿に1回はreport、15投稿に1回はfukugyoを返す。
+    10投稿に1回はfukugyo、15投稿に1回はreportを返す。
     """
     count = len(posts_log)
 
-    # 15投稿に1回、副業投稿を挟む（reportより優先）
-    if count > 0 and count % 15 == 0:
+    # 10投稿に1回、副業投稿を挟む（reportより優先）
+    if count > 0 and count % 10 == 0:
         return "fukugyo"
 
-    # 10投稿に1回、近況報告を挟む
-    if count > 0 and count % 10 == 0:
+    # 15投稿に1回、近況報告を挟む
+    if count > 0 and count % 15 == 0:
         return "report"
 
     recent_types = [p.get("post_type", "before") for p in posts_log[-5:]]
@@ -217,7 +217,7 @@ def decide_post_type(posts_log: list) -> str:
     if len(recent_types) >= 5 and all(t == "before" for t in recent_types):
         return "after"
 
-    return "after" if random.random() < 0.40 else "before"
+    return "after" if random.random() < 0.50 else "before"
 
 
 def generate_fukugyo_post() -> str:
