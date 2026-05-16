@@ -74,7 +74,8 @@ BEFORE_RULES = """・時系列は「理学療法士1年目・副業前・手取�
 ・お金がなくて苦しかった場面を、行動と具体描写で見せる"""
 
 AFTER_RULES = """・時系列は「理学療法士2年目以降・副業を始めてから・手取り30万で余裕がある今」の話のみ。before/afterを混ぜない
-・余裕ができたことを、行動と彼女の反応で見せる。副業の説明・宣伝は絶対にしない"""
+・余裕ができたことを、行動と彼女の反応で見せる。副業の説明・宣伝は絶対にしない
+・同棲・引っ越し・部屋探しのシーンは使わない"""
 
 
 def generate_post(strategy: dict, topic: str, time_slot: str = "morning", post_type: str = "before", recent_posts: list = []) -> str:
