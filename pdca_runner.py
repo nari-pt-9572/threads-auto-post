@@ -117,7 +117,7 @@ def run(slot: str):
     if post_type == "after":
         title = "手取り30万になった僕が彼女に言われた一言。"
     else:
-        title = "手取り22万だった僕が彼女に言われた一言。"
+        title = "手取り22万だった頃、彼女に言われた一言。"
 
     # タイトル投稿
     title_post_id = post_text(title)
