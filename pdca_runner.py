@@ -113,11 +113,29 @@ def run(slot: str):
     # ⑤ 投稿（タイトル → 本文の2段構成）
     print("Threadsに投稿中...")
 
-    # タイトルを決定
-    if post_type == "after":
-        title = "手取り30万になった僕が彼女に言われた一言。"
-    else:
-        title = "手取り22万だった頃、彼女に言われた一言。"
+    # タイトルをAIが本文に合わせて生成
+    import anthropic as _anthropic
+    from config import ANTHROPIC_API_KEY as _API_KEY
+    _client = _anthropic.Anthropic(api_key=_API_KEY)
+    _time_label = "手取り22万だった頃" if post_type == "before" else "手取り30万になった今"
+    _title_prompt = f"""以下のThreads投稿の内容を読んで、タイトルを1つ生成してください。
+
+【投稿本文】
+{post_text_content}
+
+【タイトルのルール】
+・「{_time_label}、彼女に言われた一言。」という形を基本としつつ、本文のテーマに合わせて逆説・カウンター表現にしてもよい
+・例1（基本）：「手取り22万だった頃、彼女に言われた一言。」
+・例2（逆説）：「『会いに行く』が、二人を壊しかけてた。」
+・例3（逆説）：「好きだから我慢する、が一番危なかった。」
+・20文字以内。句読点で終わる。タイトルのみ返す（説明不要）"""
+    _title_msg = _client.messages.create(
+        model="claude-sonnet-4-5",
+        max_tokens=50,
+        messages=[{"role": "user", "content": _title_prompt}],
+    )
+    title = _title_msg.content[0].text.strip()
+    print(f"  タイトル: {title}")
 
     # タイトル投稿
     title_post_id = post_text(title)
