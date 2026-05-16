@@ -101,7 +101,7 @@ def generate_post(strategy: dict, topic: str, time_slot: str = "morning", post_t
 【絶対に守るルール】
 ・1文1行で改行する
 ・一人称は「僕」。「〜です」「〜ました」などの丁寧語は使わない
-・全体で150〜170文字
+・全体で150〜180文字（改行を除いてカウント）
 ・絵文字・ハッシュタグ・「同じような人いる？」などのCTAなし
 ・移動手段は車のみ（電車・バス・徒歩はNG）。片道3時間、往復6〜8時間
 ・彼女の一言を後半に1つ入れる（「〜って聞かれた」「〜って言われた」）
@@ -117,13 +117,23 @@ def generate_post(strategy: dict, topic: str, time_slot: str = "morning", post_t
 
 投稿文だけ返してください（説明・タイトル不要）:"""
 
-    message = client.messages.create(
-        model="claude-sonnet-4-5",
-        max_tokens=400,
-        messages=[{"role": "user", "content": prompt}],
-    )
+    for attempt in range(3):
+        message = client.messages.create(
+            model="claude-sonnet-4-5",
+            max_tokens=400,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        result = message.content[0].text.strip()
+        char_count = len(result.replace("\n", ""))
+        if 150 <= char_count <= 180:
+            return result
+        # 短すぎる場合はプロンプトに追記して再試行
+        if char_count < 150:
+            prompt += f"\n\n※前回の生成は{char_count}文字でした。必ず150文字以上180文字以内で書いてください。"
+        else:
+            prompt += f"\n\n※前回の生成は{char_count}文字でした。必ず180文字以内で書いてください。"
 
-    return message.content[0].text.strip()
+    return result  # 3回試してもダメなら最後の結果を返す
 
 
 def decide_post_type(posts_log: list) -> str:
