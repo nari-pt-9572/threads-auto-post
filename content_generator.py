@@ -200,10 +200,16 @@ def decide_post_type(posts_log: list) -> str:
     """
     before/afterの比率を60:40で制御。
     beforeが5連続したら強制的にafter。
-    10投稿に1回はreportを返す。
+    10投稿に1回はreport、15投稿に1回はfukugyoを返す。
     """
+    count = len(posts_log)
+
+    # 15投稿に1回、副業投稿を挟む（reportより優先）
+    if count > 0 and count % 15 == 0:
+        return "fukugyo"
+
     # 10投稿に1回、近況報告を挟む
-    if len(posts_log) > 0 and len(posts_log) % 10 == 0:
+    if count > 0 and count % 10 == 0:
         return "report"
 
     recent_types = [p.get("post_type", "before") for p in posts_log[-5:]]
@@ -212,6 +218,37 @@ def decide_post_type(posts_log: list) -> str:
         return "after"
 
     return "after" if random.random() < 0.40 else "before"
+
+
+def generate_fukugyo_post() -> str:
+    """15投稿に1回挟む副業投稿を生成"""
+    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+
+    prompt = """25歳理学療法士が副業を始めた前後のリアルを1つ書いてください。
+
+【切り口（毎回ランダムに選ぶ）】
+- 副業を始める前の迷い・怖さ
+- 最初の一歩を踏み出した瞬間
+- 副業後に彼女との関係が変わった話
+- 副業について職場や友人に聞かれたときの話
+- 本業と副業を両立して気づいたこと
+
+【ルール】
+・1文1行、一人称は「僕」、丁寧語NG
+・副業の内容・手法・具体的な金額は言わない
+・「動いたらどう変わったか」「気づいたこと」を描写する
+・最後の一行は抽象的な気づきで締める
+・100〜140文字
+・絵文字・ハッシュタグなし
+
+投稿文だけ返してください（説明不要）:"""
+
+    message = client.messages.create(
+        model="claude-sonnet-4-5",
+        max_tokens=250,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    return message.content[0].text.strip()
 
 
 def generate_report_post() -> str:

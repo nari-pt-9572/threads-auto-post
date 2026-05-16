@@ -109,6 +109,9 @@ def run(slot: str):
         if post_type == "report":
             from content_generator import generate_report_post
             post_text_content = generate_report_post()
+        elif post_type == "fukugyo":
+            from content_generator import generate_fukugyo_post
+            post_text_content = generate_fukugyo_post()
         else:
             post_text_content = generate_post(strategy, POSTING_TOPIC, slot, post_type, recent_posts)
         print(f"\n--- 生成された投稿 ({post_type}) ---\n{post_text_content}\n{'---'*10}\n")
@@ -132,6 +135,17 @@ def run(slot: str):
 ・例：「最近の報告。」「少し変わった話。」「気づいたこと。」「副業1年後の話。」
 ・毎回違うバリエーションにする
 ・15文字以内。句読点で終わる。タイトルのみ返す（説明不要）"""
+    elif post_type == "fukugyo":
+        _title_prompt = f"""以下の副業に関する投稿に合うタイトルを1つ生成してください。
+
+【投稿本文】
+{post_text_content}
+
+【タイトルのルール】
+・読んだ人が「どういうこと？」と続きを読みたくなる逆説・カウンター表現
+・例：「動いてから気づいたこと。」「PTが副業を始めた理由。」「怖かったけど動いた話。」「職場には言ってない。」
+・毎回違うバリエーションにする
+・20文字以内。句読点で終わる。タイトルのみ返す（説明不要）"""
     else:
         _time_label = "手取り22万だった頃" if post_type == "before" else "手取り30万になった今"
         _title_prompt = f"""以下のThreads投稿の内容を読んで、タイトルを1つ生成してください。
