@@ -1,0 +1,28 @@
+name: Threadsトークン自動更新
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 1 */2 *'  # 2ヶ月ごと（約60日）
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: リポジトリをチェックアウト
+        uses: actions/checkout@v4
+
+      - name: Python セットアップ
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 依存関係インストール
+        run: pip install requests PyNaCl
+
+      - name: トークン更新
+        env:
+          THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
+          GH_PAT: ${{ secrets.GH_PAT }}
+        run: python refresh_token.py
