@@ -44,6 +44,15 @@ jobs:
           now = datetime.now(JST)
           current_hour = now.hour
 
+          # 下書きがあれば時間帯チェックをスキップして即投稿
+          draft_path = Path("data/draft_post.txt")
+          if draft_path.exists():
+              print(f"[{current_hour}時] 下書き検出。時間帯チェックをスキップして即投稿します。")
+              result = subprocess.run(
+                  ["python", "pdca_runner.py", "--slot", "morning"]
+              )
+              sys.exit(result.returncode)
+
           # 投稿スロット定義
           slot_map = {
               6:  "morning",
