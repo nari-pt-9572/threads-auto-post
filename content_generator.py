@@ -204,8 +204,8 @@ def decide_post_type(posts_log: list) -> str:
     """
     count = len(posts_log)
 
-    # 10投稿に1回、副業投稿を挟む（reportより優先）
-    if count > 0 and count % 10 == 0:
+    # 5投稿に1回、副業投稿を挟む（reportより優先）
+    if count > 0 and count % 5 == 0:
         return "fukugyo"
 
     # 15投稿に1回、近況報告を挟む
