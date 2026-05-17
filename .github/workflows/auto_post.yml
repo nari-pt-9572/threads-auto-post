@@ -1,8 +1,6 @@
 name: 自動投稿（30分ごと）
 
 on:
-  schedule:
-    - cron: '0,30 * * * *'  # 毎時0分・30分に実行
   workflow_dispatch:
 
 jobs:
