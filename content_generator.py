@@ -203,7 +203,7 @@ def generate_post(strategy: dict, topic: str, time_slot: str = "morning", post_t
 
         # 問題点をまとめてフィードバック
         feedback = "\n".join(f"・{i}" for i in issues)
-            current_prompt = prompt + f"\n\n※前回の生成に問題がありました。修正して書き直してください:\n{feedback}"
+        current_prompt = prompt + f"\n\n※前回の生成に問題がありました。修正して書き直してください:\n{feedback}"
 
     return last_result  # 5回試してもダメなら最後の結果を返す
 
