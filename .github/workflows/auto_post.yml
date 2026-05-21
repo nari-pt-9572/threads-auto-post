@@ -10,6 +10,10 @@ on:
     - cron: '0 14 * * *'  # 23:00 JST
     - cron: '0 15 * * *'  # 00:00 JST
 
+concurrency:
+  group: threads-auto-post
+  cancel-in-progress: false
+
 jobs:
   post:
     runs-on: ubuntu-latest
