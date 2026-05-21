@@ -211,21 +211,22 @@ def generate_post(strategy: dict, topic: str, time_slot: str = "morning", post_t
 def decide_post_type(posts_log: list) -> str:
     """
     before/afterの比率を50:50で制御。
+    直近5件にfukugyoがなければ強制的にfukugyoを入れる。
+    直近15件にreportがなければreportを入れる。
     beforeが5連続したら強制的にafter。
-    10投稿に1回はfukugyo、15投稿に1回はreportを返す。
     """
-    count = len(posts_log)
+    recent_types = [p.get("post_type", "before") for p in posts_log[-5:]]
+    recent_15_types = [p.get("post_type", "before") for p in posts_log[-15:]]
 
-    # 5投稿に1回、副業投稿を挟む（reportより優先）
-    if count > 0 and count % 5 == 0:
+    # 直近5件にfukugyoがなければ強制
+    if len(posts_log) >= 5 and "fukugyo" not in recent_types:
         return "fukugyo"
 
-    # 15投稿に1回、近況報告を挟む
-    if count > 0 and count % 15 == 0:
+    # 直近15件にreportがなければ強制
+    if len(posts_log) >= 15 and "report" not in recent_15_types:
         return "report"
 
-    recent_types = [p.get("post_type", "before") for p in posts_log[-5:]]
-
+    # beforeが5連続したら強制after
     if len(recent_types) >= 5 and all(t == "before" for t in recent_types):
         return "after"
 
