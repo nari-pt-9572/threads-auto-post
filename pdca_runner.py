@@ -176,12 +176,12 @@ def run(slot: str):
 
     # タイトル投稿
     title_post_id = post_text(title)
-    print(f"✅ タイトル投稿完了！ post_id={title_post_id}")
+    print(f"[OK] タイトル投稿完了！ post_id={title_post_id}")
 
     # 本文を返信として投稿
     time.sleep(3)
     post_id = post_reply(post_text_content, title_post_id)
-    print(f"✅ 本文投稿完了！ post_id={post_id}")
+    print(f"[OK] 本文投稿完了！ post_id={post_id}")
 
     # ⑥ ログ保存
     log = load_json(POSTS_LOG)
@@ -211,7 +211,7 @@ def run(slot: str):
     })
     save_json(PDCA_LOG, pdca_log[-30:])  # 直近30件だけ保持
 
-    print("\n✅ 全処理完了")
+    print("\n[OK] 全処理完了")
 
 
 if __name__ == "__main__":
