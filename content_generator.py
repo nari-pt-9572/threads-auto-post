@@ -220,19 +220,19 @@ def decide_post_type(posts_log: list) -> str:
     直近15件にreportがなければreportを入れる。
     beforeが5連続したら強制的にafter。
     """
-    recent_types = [p.get("post_type", "before") for p in posts_log[-5:]]
+    recent_types = [p.get("post_type", "before") for p in posts_log[-3:]]
     recent_15_types = [p.get("post_type", "before") for p in posts_log[-15:]]
 
-    # 直近5件にfukugyoがなければ強制
-    if len(posts_log) >= 5 and "fukugyo" not in recent_types:
+    # 直近3件にfukugyoがなければ強制
+    if len(posts_log) >= 3 and "fukugyo" not in recent_types:
         return "fukugyo"
 
     # 直近15件にreportがなければ強制
     if len(posts_log) >= 15 and "report" not in recent_15_types:
         return "report"
 
-    # beforeが5連続したら強制after
-    if len(recent_types) >= 5 and all(t == "before" for t in recent_types):
+    # beforeが3連続したら強制after
+    if len(recent_types) >= 3 and all(t == "before" for t in recent_types):
         return "after"
 
     return "after" if random.random() < 0.50 else "before"
