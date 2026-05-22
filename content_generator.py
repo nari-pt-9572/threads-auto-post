@@ -87,7 +87,8 @@ def generate_post(strategy: dict, topic: str, time_slot: str = "morning", post_t
     # 直近投稿で使われたシーン・場所（重複防止）
     scene_keywords = ["ショッピングモール", "海", "レストラン", "旅行", "プレゼント", "誕生日", "記念日",
                       "給料日", "明細", "口座", "高速", "下道", "電話", "LINE", "デート", "割り勘",
-                      "外食", "カフェ", "ドライブ", "宿", "ホテル", "砂浜", "花火", "コンビニ"]
+                      "外食", "カフェ", "ドライブ", "宿", "ホテル", "砂浜", "花火", "コンビニ",
+                      "同棲", "ガソリン", "SA", "サービスエリア", "財布", "給油"]
     recent_all_text = " ".join([p.get("text", "") for p in recent_posts[-15:]])
     used_scenes = [kw for kw in scene_keywords if kw in recent_all_text]
     if used_scenes:
@@ -95,10 +96,16 @@ def generate_post(strategy: dict, topic: str, time_slot: str = "morning", post_t
     else:
         scene_warning = ""
 
+    # 直近3件に金額（円）が含まれているか確認
+    recent_3_text = " ".join([p.get("text", "") for p in recent_posts[-3:]])
+    has_recent_money = "円" in recent_3_text or "万" in recent_3_text
+    money_rule = "・具体的な金額（〇〇円・〇万円）は入れない。金額ではなく行動・心理で描写する" if has_recent_money else "・具体的な金額を入れる場合は現実的な範囲で1回まで。毎回必ず入れなくてよい"
+
     # 使用頻度が制限されるイベント（チェック範囲 = 直近N件）
     rare_events = {
         ("年1回", 60):      ["誕生日", "記念日", "クリスマス", "バレンタイン", "昇給"],
         ("月1〜2回", 40):   ["給料日", "給与明細"],
+        ("3ヶ月に1回程度", 20): ["同棲", "ガソリン", "SA", "サービスエリア"],
         ("一生に数回", 200): ["プロポーズ", "引っ越し", "結婚式"],
     }
     recent_texts_cache = {}
@@ -134,6 +141,7 @@ def generate_post(strategy: dict, topic: str, time_slot: str = "morning", post_t
 ・現実の頻度で起きないことは使わない（誕生日は年1回、引っ越しは社会人になってからほぼしない、プロポーズは一生に1回など）
 ・整形外科クリニック勤務のため夜勤はない。「夜勤明け」「夜勤」のシーンは絶対に使わない
 ・同じ表現を繰り返さない
+{money_rule}
 {type_rules}
 {recent_hooks}
 {annual_event_warning}
