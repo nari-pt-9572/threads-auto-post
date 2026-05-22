@@ -167,7 +167,7 @@ def run(slot: str):
 ・20文字以内。句読点で終わる。タイトルのみ返す（説明不要）"""
 
     _title_msg = _client.messages.create(
-        model="claude-sonnet-4-5",
+        model="claude-haiku-4-5",
         max_tokens=50,
         messages=[{"role": "user", "content": _title_prompt}],
     )

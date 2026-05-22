@@ -148,7 +148,7 @@ def generate_post(strategy: dict, topic: str, time_slot: str = "morning", post_t
     current_prompt = prompt
     last_result = ""
 
-    for attempt in range(5):
+    for attempt in range(3):
         message = client.messages.create(
             model="claude-sonnet-4-5",
             max_tokens=400,
@@ -166,7 +166,7 @@ def generate_post(strategy: dict, topic: str, time_slot: str = "morning", post_t
         elif char_count > 220:
             issues.append(f"文字数が{char_count}文字で多すぎます。必ず160〜220文字で書いてください。")
 
-        # 文字数OKなら品質チェック
+        # 文字数OKなら品質チェック（haiku使用でコスト削減）
         if not issues:
             check_prompt = f"""以下のThreads投稿を読んで、品質チェックをしてください。
 
@@ -187,7 +187,7 @@ def generate_post(strategy: dict, topic: str, time_slot: str = "morning", post_t
 問題があれば「NG: （理由を1行で）」と返してください。"""
 
             check = client.messages.create(
-                model="claude-sonnet-4-5",
+                model="claude-haiku-4-5",
                 max_tokens=100,
                 messages=[{"role": "user", "content": check_prompt}],
             )

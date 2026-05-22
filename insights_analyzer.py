@@ -61,7 +61,7 @@ JSON形式のみで返してください（他の文字は不要）:
 }}"""
 
     message = client.messages.create(
-        model="claude-sonnet-4-5",
+        model="claude-haiku-4-5",
         max_tokens=600,
         messages=[{"role": "user", "content": prompt}],
     )

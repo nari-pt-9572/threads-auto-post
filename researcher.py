@@ -1,5 +1,7 @@
 import requests
 import random
+import re
+import json
 import anthropic
 from config import SERPER_API_KEY, ANTHROPIC_API_KEY
 
@@ -20,7 +22,7 @@ def search_google(query: str, num: int = 5) -> list[dict]:
 
 def generate_search_queries() -> list[str]:
     """
-    Claude Sonnetが毎回異なる検索クエリを自動生成。
+    Groqが毎回異なる検索クエリを自動生成。
     恋愛全般（遠距離・同棲・結婚・将来・デート・記念日など）を幅広くカバー。
     """
     client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
@@ -41,13 +43,12 @@ def generate_search_queries() -> list[str]:
 ["クエリ1", "クエリ2", ...]"""
 
     message = client.messages.create(
-        model="claude-sonnet-4-5",
+        model="claude-haiku-4-5",
         max_tokens=300,
         messages=[{"role": "user", "content": prompt}],
     )
 
     text = message.content[0].text.strip()
-    import re, json
     match = re.search(r'\[.*\]', text, re.DOTALL)
     if match:
         try:
