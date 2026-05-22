@@ -111,7 +111,7 @@ def run(slot: str):
             post_text_content = generate_report_post()
         elif post_type == "fukugyo":
             from content_generator import generate_fukugyo_post
-            post_text_content = generate_fukugyo_post()
+            post_text_content = generate_fukugyo_post(existing_log)
         else:
             post_text_content = generate_post(strategy, POSTING_TOPIC, slot, post_type, recent_posts)
         print(f"\n--- 生成された投稿 ({post_type}) ---\n{post_text_content}\n{'---'*10}\n")
